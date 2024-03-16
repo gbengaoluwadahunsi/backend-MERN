@@ -70,17 +70,18 @@ app.get("/api/notes", (request, response) => {
 app.get('/api/notes/:id', (request, response) => {
     Note.findById(request.params.id).then(note => {
       response.json(note)
-    })
-  })
+    }) })
   
 
 //Deleting resources
-app.delete("/api/notes/:id", (request, response) => {
-  const id = Number(request.params.id);
-  notes = notes.filter((note) => note.id !== id);
-
-  response(204).end();
-});
+app.delete('/api/notes/:id', (request, response, next) => {
+    Note.findByIdAndDelete(request.params.id)
+      .then(result => {
+        response.status(204).end()
+      })
+      .catch(error => next(error))
+  })
+  
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
@@ -97,12 +98,11 @@ app.post('/api/notes', (request, response) => {
       content: body.content,
       important: body.important || false,
     })
-  
     note.save().then(savedNote => {
       response.json(savedNote)
     })
   })
-
+  
 
   // Updating a note
 //   app.put('/api/notes/:id', (request, response) => {
