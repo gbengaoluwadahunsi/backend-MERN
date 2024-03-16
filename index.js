@@ -5,6 +5,9 @@
 // ------------ npm install cors
 // ------------ npm install mongoose
 // ------------ npm install dotenv
+// ------------ npm install eslint --save-dev
+// ------------ npx eslint –init
+// ------------ npm install --save-dev @stylistic/eslint-plugin-js
 
 // To start Server
 // -------------npm run dev
@@ -68,9 +71,20 @@ app.get("/api/notes", (request, response) => {
 //fetching a single resource
 
 app.get('/api/notes/:id', (request, response) => {
-    Note.findById(request.params.id).then(note => {
-      response.json(note)
-    }) })
+    Note.findById(request.params.id)
+      .then(note => {
+        if (note) {
+          response.json(note)
+        } else {
+          response.status(404).end() 
+        }
+      })
+      .catch(error => {
+        console.log(error)
+  
+        response.status(400).send({ error: 'malformatted id' })
+      })
+  })
   
 
 //Deleting resources
@@ -89,22 +103,37 @@ app.listen(PORT, () => {
 });
 
 //posting data
-app.post('/api/notes', (request, response) => {
+app.post('/api/notes', (request, response, next) => {
     const body = request.body
-    if (body.content === undefined) {
-      return response.status(400).json({ error: 'content missing' })
-    }
+  
     const note = new Note({
       content: body.content,
       important: body.important || false,
     })
-    note.save().then(savedNote => {
-      response.json(savedNote)
-    })
+  
+    note.save()
+      .then(savedNote => {
+        response.json(savedNote)
+      })
+  
+      .catch(error => next(error))
   })
+  
   
 
   // Updating a note
-//   app.put('/api/notes/:id', (request, response) => {
-      
-//   }
+  app.put('/api/notes/:id', (request, response, next) => {
+
+    const { content, important } = request.body
+  
+    Note.findByIdAndUpdate(
+      request.params.id, 
+  
+      { content, important },
+      { new: true, runValidators: true, context: 'query' }
+    ) 
+      .then(updatedNote => {
+        response.json(updatedNote)
+      })
+      .catch(error => next(error))
+  })
